@@ -264,7 +264,7 @@ header{background:var(--bg2);border-bottom:1px solid var(--border2);
 <!-- API KEY PANEL -->
 <div id="key-panel" style="display:none;background:#080c12;border-bottom:2px solid #ffcc00;padding:12px 16px;">
   <div style="max-width:600px;margin:0 auto;">
-    <div style="font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:2px;color:#ffcc00;margin-bottom:6px;">🔑 ANTHROPIC API KEY — REQUIRED FOR STANDALONE USE</div>
+    <div style="font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:2px;color:#ffcc00;margin-bottom:6px;">🔑 GEMINI API KEY — REQUIRED FOR STANDALONE USE</div>
     <div style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:#5a7080;margin-bottom:10px;line-height:1.6;">
       Get a free key at <a href="https://aistudio.google.com" target="_blank" style="color:#4488ff;">aistudio.google.com</a> → API Keys → Create Key.<br>
       Your key is saved in your browser only — never sent anywhere except Anthropic's API directly.
@@ -982,7 +982,7 @@ function toggleKeyPanel(){
 function saveKey(){
   const k=document.getElementById('key-input').value.trim();
   if(!k||k.length<10){
-    document.getElementById('key-status').textContent='❌ Invalid key format — must start with sk-ant';
+    document.getElementById('key-status').textContent='❌ Invalid key — paste your full Gemini API key';
     document.getElementById('key-status').style.color='#ff3355';
     return;
   }
