@@ -84,7 +84,6 @@ header{background:var(--bg2);border-bottom:1px solid var(--border2);
   border:1px solid var(--border);
   border-radius:6px;
 }
-/* Each level row: absolute positioned, full width */
 .lv-row{
   position:absolute;
   left:0;right:0;
@@ -106,7 +105,6 @@ header{background:var(--bg2);border-bottom:1px solid var(--border2);
   font-family:var(--mono);font-size:9px;
   background:var(--bg3);padding:0 4px;z-index:2;white-space:nowrap;
 }
-/* Current price highlight */
 .cur-bar{
   position:absolute;left:0;right:0;
   height:2px;background:var(--gold);z-index:5;
@@ -123,7 +121,6 @@ header{background:var(--bg2);border-bottom:1px solid var(--border2);
   font-family:var(--mono);font-size:10px;font-weight:700;color:var(--gold);
   transform:translateY(-50%);z-index:6;
 }
-/* Zone fills */
 .lv-zone{position:absolute;left:0;right:0;}
 
 /* SIGNAL pills */
@@ -267,7 +264,7 @@ header{background:var(--bg2);border-bottom:1px solid var(--border2);
     <div style="font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:2px;color:#ffcc00;margin-bottom:6px;">🔑 GEMINI API KEY — REQUIRED FOR STANDALONE USE</div>
     <div style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:#5a7080;margin-bottom:10px;line-height:1.6;">
       Get a free key at <a href="https://aistudio.google.com" target="_blank" style="color:#4488ff;">aistudio.google.com</a> → API Keys → Create Key.<br>
-      Your key is saved in your browser only — never sent anywhere except Anthropic's API directly.
+      Your key is saved in your browser only — never sent anywhere except Google's Gemini API directly.
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <input id="key-input" type="password" placeholder="AIza... (Gemini API key)" 
@@ -284,7 +281,7 @@ header{background:var(--bg2);border-bottom:1px solid var(--border2);
   <div class="ph" style="border:1px solid var(--border);border-radius:8px">
     <div style="font-size:18px;color:var(--text);margin-bottom:8px">Options Alpha Desk</div>
     <div>Select a ticker and click <strong style="color:var(--green)">RUN ANALYSIS ↗</strong></div>
-    <div style="margin-top:8px;font-size:10px">Full greeks · Price ladder · Risk scenarios · Trade rating · AI-powered with web search</div>
+    <div style="margin-top:8px;font-size:10px">Full greeks · Price ladder · Risk scenarios · Trade rating · AI-powered with live Google Search</div>
   </div>
 </div>
 
@@ -302,7 +299,6 @@ const R2=n=>Math.round((+n||0)*100)/100;
 const pf=s=>parseFloat((s||'').replace(/[^\-0-9.]/g,''))||0;
 const nextFri=d=>{const x=new Date();x.setDate(x.getDate()+d);const dw=x.getDay(),df=(5-dw+7)%7;x.setDate(x.getDate()+df);return x.toISOString().slice(0,10);};
 
-// ── LOAD ──────────────────────────────────────────────────────────────────────────────
 const STEPS=['Live price · VIX · IV rank · premarket levels...','Options chain greeks: Δ Γ Θ V ρ + expected move...','VWAP · MA5 · POC · technicals...','Strategy ranking + risk/reward calculation...','Trade rating + news + catalysts...'];
 function showLoad(s){
   document.getElementById('ltitle').textContent='Analysing '+s+'...';
@@ -312,7 +308,6 @@ function showLoad(s){
 function stepDone(i){const e=document.getElementById('ls'+i);if(e){e.className='ls done';e.textContent=STEPS[i].replace('...','')+' ✓';}const n=document.getElementById('ls'+(i+1));if(n)n.className='ls act';}
 function hideLoad(){document.getElementById('lov').classList.add('h');}
 
-// ── ANALYSE ───────────────────────────────────────────────────────────────────────────
 async function go(){
   const sym=document.getElementById('sym').value.trim().toUpperCase();
   if(!sym)return;
@@ -321,7 +316,6 @@ async function go(){
   const today=new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const exp=nextFri(14);
 
-  // Fetch live price from Yahoo Finance via corsproxy (free, no key needed)
   let livePrice='', liveChg='', liveVol='';
   try{
     const yurl='https://corsproxy.io/?'+encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/'+sym+'?interval=1d&range=2d');
@@ -337,13 +331,10 @@ async function go(){
       }
       liveVol=meta.regularMarketVolume?Math.round(meta.regularMarketVolume/1e6)+'M shares':'';
     }
-  }catch(e){/* silently fail, AI will use own knowledge */}
-  const livePriceContext=livePrice?`LIVE PRICE DATA (fetched now): ${sym} = ${livePrice} (${liveChg}), Volume: ${liveVol}. Use these exact numbers in your QUOTE section.`:''
+  }catch(e){}
+  const livePriceContext=livePrice?`LIVE PRICE DATA (fetched now): ${sym} = ${livePrice} (${liveChg}), Volume: ${liveVol}. Use these exact numbers in your QUOTE section.`:'';
 
-
-  const prompt=`${livePriceContext}\n\nYou are a senior institutional options trader. Today is ${today}. Search the web for REAL live data for ${sym}.
-
-Search: "${sym} stock price premarket today" and "${sym} options greeks delta gamma theta vega implied volatility" and "${sym} VWAP support resistance levels" and "${sym} news options today"
+  const prompt=`${livePriceContext}\n\nYou are a senior institutional options trader. Today is ${today}. Use your google_search tool to find REAL live data for ${sym} right now — search for current price, options greeks, IV, news, and support/resistance levels.
 
 Reply in EXACTLY this format. Use ## headers. Every value must be a real specific number from your search.
 
@@ -423,8 +414,9 @@ Under 800 words. Real data only. No placeholders.`;
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         contents:[{
-          parts:[{text:'You are a senior institutional options trader at a hedge fund. Provide precise, real, actionable analysis with specific numbers.\n\n'+prompt}]
+          parts:[{text:'You are a senior institutional options trader at a hedge fund. Use the google_search tool to find REAL live data right now. Provide precise, real, actionable analysis with specific numbers.\n\n'+prompt}]
         }],
+        tools:[{google_search:{}}],
         generationConfig:{maxOutputTokens:2500,temperature:0.3}
       })
     });
@@ -441,7 +433,6 @@ Under 800 words. Real data only. No placeholders.`;
   document.getElementById('gbtn').disabled=false;
 }
 
-// ── PARSE SECTIONS ────────────────────────────────────────────────────────────────────────────
 function getSections(raw){
   const S={};
   raw.split(/\n##\s+/).filter(Boolean).forEach(block=>{
@@ -452,10 +443,8 @@ function getSections(raw){
   return S;
 }
 
-// Parse a line of KEY:VALUE | KEY:VALUE pairs safely
 function parseKV(line){
   const out={};
-  // Split by | then each part by first :
   line.split('|').forEach(part=>{
     const i=part.indexOf(':');
     if(i<0)return;
@@ -466,11 +455,9 @@ function parseKV(line){
   return out;
 }
 
-// ── RENDER ────────────────────────────────────────────────────────────────────────────
 function render(sym,raw){
   const S=getSections(raw);
 
-  // ── QUOTE ──
   const Q=parseKV(S['QUOTE']||'');
   const price=pf(Q['PRICE']||'0');
   const chgRaw=Q['CHG']||'0%';
@@ -486,13 +473,11 @@ function render(sym,raw){
   document.getElementById('pchg').innerHTML=`<span class="${chgPct>=0?'up':'dn'}">${chgPct>=0?'+':''}${chgPct.toFixed(2)}%</span>`;
   document.getElementById('pmeta').textContent=`IV ${iv}  ·  IVR ${ivr}  ·  VIX ${vix}`;
 
-  // ── BIAS ──
   const biasParts=(S['BIAS']||'NEUTRAL|NEUTRAL|No data').split('|').map(x=>x.trim());
   const bias=biasParts[0]||'NEUTRAL', dir=biasParts[1]||'NEUTRAL', biasWhy=biasParts[2]||'';
   const bClr=bias.includes('BULL')?'var(--green)':bias.includes('BEAR')?'var(--red)':'var(--gold)';
   const bCls=bias.includes('BULL')?'sb-g':bias.includes('BEAR')?'sb-r':'sb-y';
 
-  // ── LEVELS ──
   const levels=[];
   (S['LEVELS']||'').split('\n').filter(l=>l.includes('TYPE:')).forEach(l=>{
     const kv=parseKV(l);
@@ -503,20 +488,14 @@ function render(sym,raw){
   });
   levels.sort((a,b)=>b.val-a.val);
 
-  // ── TECHNICALS ──
   const T=parseKV(S['TECHNICALS']||'');
 
-  // ── GREEKS ──
-  // Line 1: DELTA, GAMMA, THETA, VEGA, RHO
-  // Line 2: IV, IV_RANK, etc.
   const gkLines=(S['GREEKS']||'').split('\n').filter(l=>l.trim());
   const GK={};
   gkLines.forEach(l=>Object.assign(GK,parseKV(l)));
 
-  // ── STRATEGIES ──
   const strats=parseStrategies(S['STRATEGIES']||'');
 
-  // ── RATING ──
   const ratingLines=(S['RATING']||'').split('\n');
   const R1=parseKV(ratingLines[0]||'');
   const R2b=parseKV(ratingLines[1]||'');
@@ -529,7 +508,6 @@ function render(sym,raw){
   const rf=parseInt(R2b['REGIME_FIT'])||5;
   const reason=ratingLines.find(l=>l.startsWith('REASON:'))?.replace('REASON:','').trim()||'';
 
-  // ── RISK ──
   const riskLines=(S['RISK']||'').split('\n');
   const RL=parseKV(riskLines[0]||'');
   const bullCase=riskLines.find(l=>/BULL_CASE/i.test(l))||'';
@@ -538,20 +516,13 @@ function render(sym,raw){
   const exitLine=riskLines.find(l=>/TAKE_PROFIT/i.test(l))||'';
   const exitKV=parseKV(exitLine);
 
-  // ── NEWS ──
   const newsLines=(S['NEWS']||'').split('\n').filter(l=>l.includes('|'));
 
-  // Entry and Inval
   const entryLvl=levels.find(l=>l.type==='ENTRY');
   const invalLvl=levels.find(l=>l.type==='INVAL');
 
-  // ── BUILD HTML ──────────────────────────────────────────────────────────────────
   const html=`
-
-<!-- TOP ROW: Rating + Price Ladder + Context -->
 <div style="display:grid;grid-template-columns:200px 1fr 300px;gap:12px">
-
-  <!-- 0. RATING -->
   <div class="sec">
     <div class="sec-hd"><span class="sn">0</span><span class="st">TRADE RATING</span></div>
     <div style="padding:14px 12px;text-align:center">
@@ -572,8 +543,6 @@ function render(sym,raw){
       ])}
     </div>
   </div>
-
-  <!-- 1. PRICE LADDER -->
   <div class="sec">
     <div class="sec-hd"><span class="sn">1</span><span class="st">VISUAL PRICE MAP</span>
       <span class="sbadge ${bCls}" style="margin-left:auto">${bias.replace('_',' ')} · ${dir}</span>
@@ -583,8 +552,6 @@ function render(sym,raw){
       ${ladderLegend()}
     </div>
   </div>
-
-  <!-- 2. CONTEXT -->
   <div class="sec">
     <div class="sec-hd"><span class="sn">2</span><span class="st">MARKET CONTEXT</span></div>
     <div class="kgrid g2" style="border-top:none">
@@ -610,7 +577,6 @@ function render(sym,raw){
   </div>
 </div>
 
-<!-- 3. GREEKS -->
 <div class="sec">
   <div class="sec-hd"><span class="sn">3</span><span class="st">COMPREHENSIVE GREEKS — ${sym} ATM OPTIONS · EXP ${nextFri(14)}</span>
     <span class="sbadge sb-b" style="margin-left:auto">REAL GREEKS FROM WEB SEARCH</span>
@@ -650,7 +616,6 @@ function render(sym,raw){
   </div>
 </div>
 
-<!-- 4. STRATEGIES -->
 <div class="sec">
   <div class="sec-hd"><span class="sn">4</span><span class="st">OPTIONS STRATEGIES — RANKED BEST → WORST</span>
     <span class="sbadge sb-g" style="margin-left:auto">DELTA 0.20–0.35 TARGET</span>
@@ -658,7 +623,6 @@ function render(sym,raw){
   ${strats.length?strats.map(s=>buildStratCard(s)).join(''):'<div class="ph">Strategy data not available — try running again.</div>'}
 </div>
 
-<!-- 5. RISK MANAGEMENT -->
 <div class="sec">
   <div class="sec-hd"><span class="sn">5</span><span class="st">RISK MANAGEMENT</span></div>
   <div class="kgrid g4">
@@ -685,9 +649,7 @@ function render(sym,raw){
     <div class="box-text">If ${sym} trades through <strong style="color:var(--red)">$${invalLvl.val}</strong>, the trade thesis is broken. ${invalLvl.note}. Close all legs immediately — do not hold hoping for recovery.</div></div>`:''}
 </div>
 
-<!-- BOTTOM ROW: Rating detail + News -->
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-
   <div class="sec">
     <div class="sec-hd"><span class="sn">6</span><span class="st">RATING BREAKDOWN</span>
       <span class="sbadge ${score>=70?'sb-g':score>=45?'sb-y':'sb-r'}" style="margin-left:auto">${score}/100 — ${verdict}</span>
@@ -706,7 +668,6 @@ function render(sym,raw){
       ])}
     </div>
   </div>
-
   <div class="sec">
     <div class="sec-hd"><span class="sn">7</span><span class="st">NEWS &amp; CATALYSTS</span></div>
     <div style="padding:0 14px">
@@ -728,7 +689,6 @@ function render(sym,raw){
   document.getElementById('wrap').innerHTML=html;
 }
 
-// ── LADDER LINE HELPER ───────────────────────────────────────────────────────────────────────────
 function lvLine(val,color,dash,leftLabel,rightLabel,weight){
   const lineStyle=dash
     ? 'background:repeating-linear-gradient(90deg,'+color+' 0,'+color+' 5px,transparent 5px,transparent 9px)'
@@ -740,63 +700,45 @@ function lvLine(val,color,dash,leftLabel,rightLabel,weight){
     +'</div>';
 }
 
-// ── PRICE LADDER (fixed positioning) ─────────────────────────────────────────────────────
 function buildLadder(price,levels,pmHi,pmLo,vwap){
-  // Collect all values to find range
   const allVals=[price,...levels.map(l=>l.val),pmHi,pmLo,vwap].filter(v=>v>0);
   if(!allVals.length||!price)return`<div class="ph">Price data loading...</div>`;
-
   const minV=Math.min(...allVals)*0.996;
   const maxV=Math.max(...allVals)*1.004;
   const range=maxV-minV;
-
-  // Convert price value to % from bottom (0% = bottom, 100% = top)
   const toBot=v=>Math.max(2,Math.min(96,((v-minV)/range)*92+2));
-
   let html=`<div class="ladder-outer"><div class="ladder-container">`;
-
-  // Zones
   const sups=levels.filter(l=>l.type.startsWith('SUPPORT'));
   const ress=levels.filter(l=>l.type.startsWith('RESIST'));
   if(sups.length){
     const sTop=toBot(Math.max(...sups.map(s=>s.val)));
     const sBot=toBot(Math.min(...sups.map(s=>s.val)));
-    const height=Math.max(2,sTop-sBot);
-    html+=`<div style="position:absolute;left:0;right:0;bottom:${sBot}%;height:${height}%;background:rgba(0,255,136,.07);pointer-events:none"></div>`;
+    html+=`<div style="position:absolute;left:0;right:0;bottom:${sBot}%;height:${Math.max(2,sTop-sBot)}%;background:rgba(0,255,136,.07);pointer-events:none"></div>`;
   }
   if(ress.length){
     const rTop=toBot(Math.max(...ress.map(r=>r.val)));
     const rBot=toBot(Math.min(...ress.map(r=>r.val)));
-    const height=Math.max(2,rTop-rBot);
-    html+=`<div style="position:absolute;left:0;right:0;bottom:${rBot}%;height:${height}%;background:rgba(255,51,85,.07);pointer-events:none"></div>`;
+    html+=`<div style="position:absolute;left:0;right:0;bottom:${rBot}%;height:${Math.max(2,rTop-rBot)}%;background:rgba(255,51,85,.07);pointer-events:none"></div>`;
   }
-
-  // Draw PM levels
   if(pmHi>0) html+=lvLine(toBot(pmHi),'rgba(255,204,0,.7)',true,'$'+R2(pmHi),'PM HIGH',1);
   if(pmLo>0) html+=lvLine(toBot(pmLo),'rgba(255,204,0,.55)',true,'$'+R2(pmLo),'PM LOW',1);
   if(vwap>0) html+=lvLine(toBot(vwap),'rgba(68,136,255,.8)',true,'$'+R2(vwap),'VWAP',1);
-
-  // Draw all levels
   levels.forEach(({type,val,note})=>{
     let color,dash=false,weight=1.5;
-    if(type.startsWith('RESIST')) {color='rgba(255,51,85,.85)';dash=true;}
+    if(type.startsWith('RESIST')){color='rgba(255,51,85,.85)';dash=true;}
     else if(type.startsWith('SUPPORT')){color='rgba(0,255,136,.85)';dash=true;}
-    else if(type==='ENTRY')  {color='rgba(0,255,136,1)';weight=2;}
-    else if(type==='INVAL')  {color='rgba(255,51,85,1)';weight=2;}
-    else if(type==='VWAP')   {color='rgba(68,136,255,.8)';dash=true;}
-    else {color='rgba(255,255,255,.3)';dash=true;}
-    const shortType=type.replace('SUPPORT','SUP').replace('RESIST','RES');
-    html+=lvLine(toBot(val),color,dash,'$'+R2(val),shortType+' — '+note.slice(0,28),weight);
+    else if(type==='ENTRY'){color='rgba(0,255,136,1)';weight=2;}
+    else if(type==='INVAL'){color='rgba(255,51,85,1)';weight=2;}
+    else if(type==='VWAP'){color='rgba(68,136,255,.8)';dash=true;}
+    else{color='rgba(255,255,255,.3)';dash=true;}
+    html+=lvLine(toBot(val),color,dash,'$'+R2(val),type.replace('SUPPORT','SUP').replace('RESIST','RES')+' — '+note.slice(0,28),weight);
   });
-
-  // Current price bar (on top of everything)
   const curBot=toBot(price);
   html+='<div style="position:absolute;left:0;right:0;bottom:'+curBot+'%;z-index:10;pointer-events:none">'
     +'<div style="position:absolute;left:0;right:0;height:2.5px;background:#ffcc00"></div>'
     +'<div style="position:absolute;left:10px;bottom:4px;font-family:\'Space Mono\',monospace;font-size:10px;font-weight:700;color:#ffcc00">PRICE NOW</div>'
     +'<div style="position:absolute;right:10px;bottom:3px;background:#ffcc00;color:#000;font-family:\'Space Mono\',monospace;font-size:10px;font-weight:700;padding:2px 8px;border-radius:3px">$'+R2(price)+'</div>'
     +'</div>';
-
   html+=`</div></div>`;
   return html;
 }
@@ -808,57 +750,34 @@ function ladderLegend(){
     {col:'var(--gold)',label:'Current Price'},
     {col:'rgba(68,136,255,.8)',label:'VWAP'},
     {col:'rgba(255,204,0,.6)',label:'Premarket H/L'},
-  ].map(({col,label})=>`<div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted2)">
-    <div style="width:16px;height:1.5px;background:${col};border-radius:1px"></div>${label}</div>`).join('');
+  ].map(({col,label})=>`<div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted2)"><div style="width:16px;height:1.5px;background:${col};border-radius:1px"></div>${label}</div>`).join('');
 }
 
-// ── STRATEGY PARSER ───────────────────────────────────────────────────────────────────────────
 function parseStrategies(raw){
   const strats=[];
-  const blocks=raw.split('---STRATEGY---').filter(b=>b.trim());
-  blocks.forEach(block=>{
+  raw.split('---STRATEGY---').filter(b=>b.trim()).forEach(block=>{
     const lines=block.trim().split('\n').filter(l=>l.trim());
     if(!lines.length)return;
-
-    // Header line: RANK:1 | NAME:... | TYPE:... | BIAS:...
     const header=parseKV(lines[0]);
     const rank=parseInt(header['RANK'])||99;
     const name=header['NAME']||'Unknown';
     const type=(header['TYPE']||'DEBIT').toUpperCase();
     const bias=(header['BIAS']||'NEUTRAL').toUpperCase();
-
-    // Leg lines: start with LEG:
     const legs=[];
     lines.slice(1).forEach(l=>{
       if(!/^LEG:/i.test(l.trim()))return;
-      // Format: LEG:SELL | PUT | $XX | DATE | DELTA:0.XX | MID:$X.XX | IV:XX% | OI:XXK
       const parts=l.replace(/^LEG:/i,'').split('|').map(x=>x.trim());
       const action=(parts[0]||'SELL').toUpperCase();
       const optType=(parts[1]||'PUT').toUpperCase();
       const strike=pf(parts[2]||'0');
       const exp=parts[3]||'—';
       const legKV=parseKV(parts.slice(4).join('|'));
-      legs.push({action,optType,strike,exp,
-        delta:legKV['DELTA']||'—',
-        mid:legKV['MID']||'—',
-        iv:legKV['IV']||'—',
-        oi:legKV['OI']||'—'});
+      legs.push({action,optType,strike,exp,delta:legKV['DELTA']||'—',mid:legKV['MID']||'—',iv:legKV['IV']||'—',oi:legKV['OI']||'—'});
     });
-
-    // Footer line: CREDIT:... | MAX_PROFIT:... etc
     const footerLine=lines.find(l=>/CREDIT:|MAX_PROFIT:/i.test(l))||'';
     const F=parseKV(footerLine);
     const whyLine=lines.find(l=>/^WHY:/i.test(l.trim()))||'';
-    const why=whyLine.replace(/^WHY:/i,'').trim();
-
-    strats.push({rank,name,type,bias,legs,
-      credit:F['CREDIT']||'—',
-      maxProfit:F['MAX_PROFIT']||'—',
-      maxLoss:F['MAX_LOSS']||'—',
-      breakeven:F['BREAKEVEN']||'—',
-      rr:F['RR']||'—',
-      winRate:F['WIN_RATE']||'—',
-      why});
+    strats.push({rank,name,type,bias,legs,credit:F['CREDIT']||'—',maxProfit:F['MAX_PROFIT']||'—',maxLoss:F['MAX_LOSS']||'—',breakeven:F['BREAKEVEN']||'—',rr:F['RR']||'—',winRate:F['WIN_RATE']||'—',why:whyLine.replace(/^WHY:/i,'').trim()});
   });
   strats.sort((a,b)=>a.rank-b.rank);
   return strats;
@@ -867,29 +786,22 @@ function parseStrategies(raw){
 function buildStratCard(s){
   const typeCls=s.type==='CREDIT'?'stype-c':s.type==='NEUTRAL'?'stype-n':'stype-d';
   const biasCol=s.bias==='BULL'?'var(--green)':s.bias==='BEAR'?'var(--red)':'var(--gold)';
-
   const legsHtml=s.legs.length?`
-    <table class="leg-tbl">
-      <thead><tr>
-        <th>ACTION</th><th>TYPE</th><th>STRIKE</th><th>EXPIRY</th>
-        <th>DELTA</th><th>MID PRICE</th><th>IV</th><th>OPEN INT.</th>
-      </tr></thead>
-      <tbody>
-        ${s.legs.map(l=>`<tr>
-          <td class="${l.action==='SELL'?'a-sell':'a-buy'}">${l.action}</td>
-          <td>${l.optType}</td>
-          <td class="t-k">${l.strike?'$'+l.strike:'—'}</td>
-          <td style="color:var(--muted2)">${l.exp}</td>
-          <td class="t-d">${l.delta}</td>
-          <td class="t-p">${l.mid}</td>
-          <td class="t-iv">${l.iv}</td>
-          <td style="color:var(--muted2)">${l.oi}</td>
-        </tr>`).join('')}
-      </tbody>
-    </table>`:'<div style="color:var(--muted2);font-size:10px;padding:6px 0">No leg data</div>';
-
+    <table class="leg-tbl"><thead><tr>
+      <th>ACTION</th><th>TYPE</th><th>STRIKE</th><th>EXPIRY</th><th>DELTA</th><th>MID PRICE</th><th>IV</th><th>OPEN INT.</th>
+    </tr></thead><tbody>
+      ${s.legs.map(l=>`<tr>
+        <td class="${l.action==='SELL'?'a-sell':'a-buy'}">${l.action}</td>
+        <td>${l.optType}</td>
+        <td class="t-k">${l.strike?'$'+l.strike:'—'}</td>
+        <td style="color:var(--muted2)">${l.exp}</td>
+        <td class="t-d">${l.delta}</td>
+        <td class="t-p">${l.mid}</td>
+        <td class="t-iv">${l.iv}</td>
+        <td style="color:var(--muted2)">${l.oi}</td>
+      </tr>`).join('')}
+    </tbody></table>`:'<div style="color:var(--muted2);font-size:10px;padding:6px 0">No leg data</div>';
   const wr=parseInt(s.winRate)||0;
-
   return`<div class="strat">
     <div class="strat-hd">
       <div style="font-family:var(--mono);font-size:10px;color:var(--muted2);background:var(--bg4);border:1px solid var(--border);padding:2px 7px;border-radius:3px">#${s.rank}</div>
@@ -912,70 +824,38 @@ function buildStratCard(s){
   </div>`;
 }
 
-// ── UI COMPONENTS ───────────────────────────────────────────────────────────────────────────
 function kpi(label,val,cls){
   return`<div class="kpi"><div class="kl">${label}</div><div class="kv ${cls||''}">${val}</div></div>`;
 }
-
 function gkBox(sym2,name,val,color,desc){
-  return`<div class="gk">
-    <div class="gk-sym" style="color:${color}">${sym2}</div>
-    <div class="gk-name">${name}</div>
-    <div class="gk-val" style="color:${color}">${val}</div>
-    <div class="gk-sub">${desc}</div>
-  </div>`;
+  return`<div class="gk"><div class="gk-sym" style="color:${color}">${sym2}</div><div class="gk-name">${name}</div><div class="gk-val" style="color:${color}">${val}</div><div class="gk-sub">${desc}</div></div>`;
 }
-
 function sig(name,val){
   const up=/(ABOVE|UP|STRONG.*BULL|YES|BULL)/i.test(val);
   const dn=/(BELOW|DOWN|BEAR|NO)/i.test(val);
   const col=up?'var(--green)':dn?'var(--red)':'var(--gold)';
-  const clean=val.split(':')[0].split('-')[0];
-  return`<div class="sig"><div class="sig-dot" style="background:${col}"></div>
-    <span class="sig-name">${name}</span>
-    <span class="sig-val" style="color:${col}">${clean}</span></div>`;
+  return`<div class="sig"><div class="sig-dot" style="background:${col}"></div><span class="sig-name">${name}</span><span class="sig-val" style="color:${col}">${val.split(':')[0].split('-')[0]}</span></div>`;
 }
-
 function miniStat(label,val,cls){
   return`<div class="stat"><div class="stat-l">${label}</div><div class="stat-v ${cls||''}">${val}</div></div>`;
 }
-
 function scenBox(label,text,color){
-  const content=text.replace(/:[^|]*/,'').trim()||'—';
-  return`<div class="scen" style="border-left:3px solid ${color}">
-    <div class="scen-l" style="color:${color}">${label}</div>
-    <div class="scen-v">${content}</div>
-  </div>`;
+  return`<div class="scen" style="border-left:3px solid ${color}"><div class="scen-l" style="color:${color}">${label}</div><div class="scen-v">${text.replace(/:[^|]*/,'').trim()||'—'}</div></div>`;
 }
-
 function miniPBars(items){
-  return items.map(({l,v,c})=>`
-    <div class="pb-wrap">
-      <div class="pb-lbl"><span style="font-size:8px">${l}</span><span style="color:${c};font-family:var(--mono);font-size:9px">${v}/10</span></div>
-      <div class="pb"><div class="pb-fill" style="width:${v*10}%;background:${c}"></div></div>
-    </div>`).join('');
+  return items.map(({l,v,c})=>`<div class="pb-wrap"><div class="pb-lbl"><span style="font-size:8px">${l}</span><span style="color:${c};font-family:var(--mono);font-size:9px">${v}/10</span></div><div class="pb"><div class="pb-fill" style="width:${v*10}%;background:${c}"></div></div></div>`).join('');
 }
-
 function bigPBars(items){
-  return items.map(({l,v,c,desc})=>`
-    <div class="pb-wrap" style="margin-bottom:10px">
-      <div class="pb-lbl" style="margin-bottom:4px">
-        <span style="font-size:11px;color:var(--text)">${l}</span>
-        <span style="color:${c};font-family:var(--mono);font-size:12px;font-weight:700">${v}/10</span>
-      </div>
-      <div class="pb" style="height:6px"><div class="pb-fill" style="width:${v*10}%;background:${c}"></div></div>
-      <div style="font-size:9px;color:var(--muted2);margin-top:3px">${desc}</div>
-    </div>`).join('');
+  return items.map(({l,v,c,desc})=>`<div class="pb-wrap" style="margin-bottom:10px"><div class="pb-lbl" style="margin-bottom:4px"><span style="font-size:11px;color:var(--text)">${l}</span><span style="color:${c};font-family:var(--mono);font-size:12px;font-weight:700">${v}/10</span></div><div class="pb" style="height:6px"><div class="pb-fill" style="width:${v*10}%;background:${c}"></div></div><div style="font-size:9px;color:var(--muted2);margin-top:3px">${desc}</div></div>`).join('');
 }
 
-// ── API KEY MANAGEMENT ──────────────────────────────────────────────────────────────────────────
 function toggleKeyPanel(){
   const p=document.getElementById('key-panel');
   p.style.display=p.style.display==='none'?'block':'none';
   if(p.style.display==='block'){
     const k=localStorage.getItem('oad_key')||'';
     document.getElementById('key-input').value=k;
-    document.getElementById('key-status').textContent=k?'✅ Key saved':'No key saved — running in Claude.ai mode';
+    document.getElementById('key-status').textContent=k?'✅ Key saved':'No key saved';
     document.getElementById('key-status').style.color=k?'#00ff88':'#5a7080';
   }
 }
@@ -995,13 +875,12 @@ function saveKey(){
 function clearKey(){
   localStorage.removeItem('oad_key');
   document.getElementById('key-input').value='';
-  document.getElementById('key-status').textContent='Key cleared — running in Claude.ai mode';
+  document.getElementById('key-status').textContent='Key cleared';
   document.getElementById('key-status').style.color='#5a7080';
   document.getElementById('key-btn').style.borderColor='#243040';
   document.getElementById('key-btn').style.color='#5a7080';
 }
 
-// On load: show key indicator if key exists
 window.addEventListener('load',()=>{
   const k=localStorage.getItem('oad_key')||'';
   if(k){
